@@ -1,9 +1,11 @@
 package com.morrislab.customertransactionmanagement.service.impl;
 
 import com.morrislab.customertransactionmanagement.dto.request.CustomerTransactionRequest;
+import com.morrislab.customertransactionmanagement.dto.response.CustomerBalanceResponse;
 import com.morrislab.customertransactionmanagement.dto.response.CustomerTransactionResponse;
 import com.morrislab.customertransactionmanagement.entity.CustomerTransactionDetail;
 import com.morrislab.customertransactionmanagement.exception.ConflictException;
+import com.morrislab.customertransactionmanagement.exception.ResourceNotFoundException;
 import com.morrislab.customertransactionmanagement.exception.ValidationException;
 import com.morrislab.customertransactionmanagement.repository.CustomerTransactionDetailRepository;
 import com.morrislab.customertransactionmanagement.service.CustomerTransactionService;
@@ -32,6 +34,24 @@ public class CustomerTransactionServiceImpl implements CustomerTransactionServic
                         existingTransaction,
                         "Customer transaction details already processed for this idempotency key"))
                 .orElseGet(() -> saveNewCustomerTransaction(request, idempotencyKey));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CustomerBalanceResponse getCustomerBalance(String accountNumber) {
+        if (StringUtils.isBlank(accountNumber)) {
+            throw new ValidationException("ACCOUNT_NUMBER_REQUIRED", "Account number is required");
+        }
+
+        log.info("Retrieving current balance for account {}", accountNumber);
+
+        CustomerTransactionDetail transactionDetail = customerTransactionDetailRepository
+                .findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "ACCOUNT_NOT_FOUND",
+                        "Account number does not exist: " + accountNumber));
+
+        return toBalanceResponse(transactionDetail, "Current account balance retrieved successfully");
     }
 
     private CustomerTransactionResponse saveNewCustomerTransaction(
@@ -92,6 +112,17 @@ public class CustomerTransactionServiceImpl implements CustomerTransactionServic
                 .currentBalance(transactionDetail.getCurrentBalance())
                 .message(message)
                 .createdAt(transactionDetail.getCreatedAt())
+                .build();
+    }
+
+    private CustomerBalanceResponse toBalanceResponse(CustomerTransactionDetail transactionDetail, String message) {
+        return CustomerBalanceResponse.builder()
+                .customerId(transactionDetail.getCustomerId())
+                .customerName(transactionDetail.getCustomerName())
+                .accountNumber(transactionDetail.getAccountNumber())
+                .currentBalance(transactionDetail.getCurrentBalance())
+                .message(message)
+                .asOf(transactionDetail.getUpdatedAt())
                 .build();
     }
 }

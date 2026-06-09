@@ -8,9 +8,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.morrislab.customertransactionmanagement.dto.request.CustomerTransactionRequest;
+import com.morrislab.customertransactionmanagement.dto.response.CustomerBalanceResponse;
 import com.morrislab.customertransactionmanagement.dto.response.CustomerTransactionResponse;
 import com.morrislab.customertransactionmanagement.entity.CustomerTransactionDetail;
 import com.morrislab.customertransactionmanagement.exception.ConflictException;
+import com.morrislab.customertransactionmanagement.exception.ResourceNotFoundException;
 import com.morrislab.customertransactionmanagement.exception.ValidationException;
 import com.morrislab.customertransactionmanagement.repository.CustomerTransactionDetailRepository;
 import java.math.BigDecimal;
@@ -90,6 +92,40 @@ class CustomerTransactionServiceImplTest {
 
         assertEquals("ACCOUNT_ALREADY_EXISTS", exception.getCode());
         verify(repository, never()).save(any(CustomerTransactionDetail.class));
+    }
+
+    @Test
+    void shouldRetrieveCustomerBalanceSuccessfully() {
+        CustomerTransactionDetail transactionDetail = transactionDetail();
+
+        when(repository.findByAccountNumber("ACC001")).thenReturn(Optional.of(transactionDetail));
+
+        CustomerBalanceResponse response = service.getCustomerBalance("ACC001");
+
+        assertEquals("CUST001", response.getCustomerId());
+        assertEquals("ACC001", response.getAccountNumber());
+        assertEquals(new BigDecimal("1500.00"), response.getCurrentBalance());
+        assertEquals("Current account balance retrieved successfully", response.getMessage());
+    }
+
+    @Test
+    void shouldThrowWhenBalanceAccountNotFound() {
+        when(repository.findByAccountNumber("UNKNOWN")).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> service.getCustomerBalance("UNKNOWN"));
+
+        assertEquals("ACCOUNT_NOT_FOUND", exception.getCode());
+    }
+
+    @Test
+    void shouldThrowWhenBalanceAccountNumberIsBlank() {
+        ValidationException exception = assertThrows(
+                ValidationException.class,
+                () -> service.getCustomerBalance(" "));
+
+        assertEquals("ACCOUNT_NUMBER_REQUIRED", exception.getCode());
     }
 
     private CustomerTransactionRequest validRequest() {

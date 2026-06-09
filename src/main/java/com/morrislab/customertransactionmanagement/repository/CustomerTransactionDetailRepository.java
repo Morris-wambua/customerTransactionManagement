@@ -18,6 +18,8 @@ public interface CustomerTransactionDetailRepository extends JpaRepository<Custo
 
     Optional<CustomerTransactionDetail> findByIdempotencyKey(String idempotencyKey);
 
+    Optional<CustomerTransactionDetail> findByAccountNumber(String accountNumber);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select transactionDetail from CustomerTransactionDetail transactionDetail "
             + "where transactionDetail.accountNumber = :accountNumber")

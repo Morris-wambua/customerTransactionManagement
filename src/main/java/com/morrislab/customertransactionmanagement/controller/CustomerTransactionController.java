@@ -1,6 +1,7 @@
 package com.morrislab.customertransactionmanagement.controller;
 
 import com.morrislab.customertransactionmanagement.dto.request.CustomerTransactionRequest;
+import com.morrislab.customertransactionmanagement.dto.response.CustomerBalanceResponse;
 import com.morrislab.customertransactionmanagement.dto.response.CustomerTransactionResponse;
 import com.morrislab.customertransactionmanagement.service.CustomerTransactionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -40,5 +43,13 @@ public class CustomerTransactionController {
 
         HttpStatus status = response.getMessage().contains("already processed") ? HttpStatus.OK : HttpStatus.CREATED;
         return ResponseEntity.status(status).body(response);
+    }
+
+    @GetMapping("/{accountNumber}/balance")
+    @Operation(summary = "Retrieve a customer's current account balance")
+    public ResponseEntity<CustomerBalanceResponse> getCustomerBalance(
+            @PathVariable String accountNumber) {
+        CustomerBalanceResponse response = customerTransactionService.getCustomerBalance(accountNumber);
+        return ResponseEntity.ok(response);
     }
 }
