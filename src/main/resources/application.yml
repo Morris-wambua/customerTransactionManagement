@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: customerTransactionManagement
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/cooperative?currentSchema=transaction_management}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:12345}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
